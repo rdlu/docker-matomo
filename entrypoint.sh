@@ -141,8 +141,6 @@ if [ "$SIDECAR_CRON" = "1" ]; then
   echo "Fixing permissions..."
   chmod -R 0644 ${CRONTAB_PATH}
 else
-  rm /etc/supervisord/cron.conf
-
   # Check if already installed
   if [ -f /data/config/config.ini.php ]; then
     echo "Setting Matomo log level to $LOG_LEVEL..."
@@ -166,6 +164,22 @@ else
     echo ">> Open your browser to install Matomo through the wizard"
     echo ">>"
   fi
+
+  # GEOIP
+  # Init
+  rm -rf ${CRONTAB_PATH}
+  mkdir -m 0644 -p ${CRONTAB_PATH}
+  touch ${CRONTAB_PATH}/nginx
+
+  # Set
+  if [ ! -z "$CRON_GEOIP" ]; then
+    echo "Creating GeoIP cron task with the following period fields : $CRON_GEOIP"
+    echo "${CRON_GEOIP} /usr/local/bin/update_geoip" >> ${CRONTAB_PATH}/nginx
+  else
+    echo "CRON_GEOIP env var empty..."
+  fi
+  echo "Fixing permissions..."
+  chmod -R 0644 ${CRONTAB_PATH}
 fi
 
 exec "$@"
