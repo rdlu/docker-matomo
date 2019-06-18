@@ -21,7 +21,7 @@ SSMTP_HOSTNAME=${SSMTP_HOSTNAME:-$(hostname -f)}
 SSMTP_TLS=${SSMTP_TLS:-NO}
 
 SESSION_SAVE_HANDLER=${SESSION_SAVE_HANDLER:-files}
-SESSION_SAVE_PATH=${SESSION_SAVE_PATH:-/data/tmp}
+SESSION_SAVE_PATH=${SESSION_SAVE_PATH:-/tmp}
 
 REDIS_HOST=${REDIS_HOST:-matomo_redis}
 REDIS_PORT=${REDIS_PORT:-6379}
@@ -81,15 +81,17 @@ unset SSMTP_PASSWORD
 
 # Init Matomo
 echo "Initializing Matomo files / folders..."
-mkdir -p /data/config /data/misc /data/plugins /data/session /data/tmp /etc/supervisord /var/log/supervisord
+mkdir -p /data/config /data/misc /data/tmp /data/session /etc/supervisord /var/log/supervisord
 
 # Copy global config
 cp -Rf /var/www/config /data/
 
 # Check plugins
 echo "Checking Matomo plugins..."
-if [[ ! -L /var/www/plugins && -d /var/www/plugins ]]; then
-  cp -R /var/www/plugins/* /data/plugins
+if [[ ! -L /var/www/plugins && -d /var/www/plugins && ! -d /data/plugins ]]; then
+  echo "Copying plugins to data folder..."
+  mkdir -p /data/plugins
+  cp -Rf /var/www/plugins/* /data/plugins
 fi
 rm -rf /var/www/plugins
 ln -sf /data/plugins /var/www/plugins
@@ -155,6 +157,7 @@ else
     runas_nginx "php /var/www/console config:set --section='RedisCache' --key='database' --value='42'"
     runas_nginx "php /var/www/console config:set --section='RedisCache' --key='host' --value='$REDIS_HOST'"
     runas_nginx "php /var/www/console config:set --section='RedisCache' --key='port' --value='$REDIS_PORT'"
+    runas_nginx "php /var/www/console config:set --section='ChainedCache' --key='backends' --value=''"
     runas_nginx "php /var/www/console config:set --section='ChainedCache' --key='backends[]' --value='array'"
     runas_nginx "php /var/www/console config:set --section='ChainedCache' --key='backends[]' --value='redis'"
     runas_nginx "php /var/www/console config:set --section='Cache' --key='backend' --value='chained'"
