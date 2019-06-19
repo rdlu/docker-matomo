@@ -88,13 +88,14 @@ cp -Rf /var/www/config /data/
 
 # Check plugins
 echo "Checking Matomo plugins..."
-if [[ ! -L /var/www/plugins && -d /var/www/plugins && ! -d /data/plugins ]]; then
-  echo "Copying plugins to data folder..."
-  mkdir -p /data/plugins
-  cp -Rf /var/www/plugins/* /data/plugins
-fi
-rm -rf /var/www/plugins
-ln -sf /data/plugins /var/www/plugins
+plugins=$(ls -l /data/plugins | egrep '^d' | awk '{print $9}')
+for plugin in ${plugins}; do
+  if [ -d /var/www/plugins/${plugin} ]; then
+    rm -rf /var/www/plugins/${plugin}
+  fi
+  echo "  - Adding ${plugin}"
+  ln -sf /data/plugins/${plugin} /var/www/plugins/${plugin}
+done
 
 # Check user folder
 echo "Checking Matomo user-misc folder..."
